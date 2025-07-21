@@ -1,0 +1,17 @@
+{"asctime": "2025-06-08 00:19:34,219", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API do Agente Decision iniciando...", "process": 52468, "thread": 135687350214784}
+{"asctime": "2025-06-08 00:19:35,009", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API iniciada e pronta para receber requisi\u00e7\u00f5es.", "process": 52468, "thread": 135687350214784}
+{"asctime": "2025-06-08 00:22:21,766", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API encerrando.", "process": 52468, "thread": 135687350214784}
+{"asctime": "2025-06-08 00:22:25,740", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API do Agente Decision iniciando...", "process": 53902, "thread": 140094390833280}
+{"asctime": "2025-06-08 00:22:26,512", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API iniciada e pronta para receber requisi\u00e7\u00f5es.", "process": 53902, "thread": 140094390833280}
+{"asctime": "2025-06-08 00:22:35,250", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API encerrando.", "process": 53902, "thread": 140094390833280}
+{"asctime": "2025-06-08 00:22:39,159", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API do Agente Decision iniciando...", "process": 54068, "thread": 123243499397248}
+{"asctime": "2025-06-08 00:22:39,915", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API iniciada e pronta para receber requisi\u00e7\u00f5es.", "process": 54068, "thread": 123243499397248}
+{"asctime": "2025-06-08 00:24:19,491", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API encerrando.", "process": 54068, "thread": 123243499397248}
+{"asctime": "2025-07-21 17:53:27,356", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API do Agente Decision iniciando...", "process": 37158, "thread": 133384602423424}
+{"asctime": "2025-07-21 17:53:28,018", "name": "DecisionAgentLogger", "levelname": "CRITICAL", "message": "A chave da API da Groq n\u00e3o foi encontrada. A aplica\u00e7\u00e3o ser\u00e1 encerrada.", "process": 37158, "thread": 133384602423424}
+{"asctime": "2025-07-21 17:55:08,003", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API do Agente Decision iniciando...", "process": 38114, "thread": 132933405880448}
+{"asctime": "2025-07-21 17:55:08,640", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API iniciada e pronta para receber requisi\u00e7\u00f5es.", "process": 38114, "thread": 132933405880448}
+{"asctime": "2025-07-21 17:55:45,254", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "Requisi\u00e7\u00e3o recebida", "process": 38114, "thread": 132933405880448, "session_id": "session_1753131339296_tou4uttu0", "input_length": 8}
+{"asctime": "2025-07-21 17:55:45,274", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "Vaga Identificada", "process": 38114, "thread": 132933405880448, "session_id": "session_1753131339296_tou4uttu0", "id_vaga": "5183", "titulo_vaga": "ANALISTA PL/JR C/ SQL", "nivel_profissional": "Analista"}
+{"asctime": "2025-07-21 17:55:45,274", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "Requisi\u00e7\u00e3o finalizada", "process": 38114, "thread": 132933405880448, "session_id": "session_1753131339296_tou4uttu0", "duration_ms": 19.88}
+{"asctime": "2025-07-21 17:57:39,619", "name": "DecisionAgentLogger", "levelname": "INFO", "message": "API encerrando.", "process": 38114, "thread": 132933405880448}

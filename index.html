@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Recrutamento Decision</title>
+    <style>
+        /* CSS para estilizar o chatbot */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #chat-container {
+            width: 500px;
+            height: 700px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px S10px rgba(0,0,0,0.1);
+        }
+        #message-list {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .agent-message {
+            background-color: #e9e9eb;
+            color: #000;
+            align-self: flex-start;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: #fff;
+            align-self: flex-end;
+        }
+        /* NOVO: Estilo e animação para o indicador "Digitando..." */
+        .typing-indicator {
+            padding: 17px 15px;
+        }
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #999;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.3s infinite;
+        }
+        .typing-indicator span:nth-of-type(2) { animation-delay: 0.15s; }
+        .typing-indicator span:nth-of-type(3) { animation-delay: 0.3s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+        #chat-form {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        #user-input {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+        #user-input:focus { outline: none; border-color: #007bff; }
+        #chat-form button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            margin-left: 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #chat-form button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <div id="message-list"></div>
+    <form id="chat-form">
+        <input type="text" id="user-input" placeholder="Digite sua mensagem..." autocomplete="off">
+        <button type="submit">Enviar</button>
+    </form>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const messageList = document.getElementById('message-list');
+    const apiUrl = 'http://127.0.0.1:8000/predict';
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // CORREÇÃO: Função para adicionar mensagem, agora com suporte ao indicador de "digitando"
+    function addMessage(sender, text, isTyping = false) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', `${sender}-message`);
+        
+        if (isTyping) {
+            messageElement.classList.add('typing-indicator');
+            messageElement.innerHTML = '<span></span><span></span><span></span>';
+        } else {
+            messageElement.textContent = text;
+        }
+        
+        messageList.appendChild(messageElement);
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+    
+    // CORREÇÃO: Função dedicada para remover o indicador
+    function removeTypingIndicator() {
+        const indicator = messageList.querySelector('.typing-indicator');
+        if (indicator) {
+            messageList.removeChild(indicator);
+        }
+    }
+
+    async function sendMessageToAPI(text) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, user_input: text })
+            });
+
+            if (!response.ok) { throw new Error(`Erro na API: ${response.statusText}`); }
+
+            const data = await response.json();
+            
+            // CORREÇÃO: Remove o indicador ANTES de adicionar a nova mensagem
+            removeTypingIndicator();
+            addMessage('agent', data.agent_reply);
+
+        } catch (error) {
+            removeTypingIndicator(); // Remove também em caso de erro
+            console.error('Falha ao comunicar com a API:', error);
+            addMessage('agent', 'Desculpe, estou com um problema de conexão no momento. Tente novamente mais tarde.');
+        }
+    }
+
+    // Inicia a conversa
+    addMessage('agent', 'Olá! Sou Alex, assistente de recrutamento da Decision. Para qual vaga você gostaria de conversar hoje?');
+
+   
+    chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const userText = userInput.value.trim();
+
+        if (userText) {
+            addMessage('user', userText);
+            userInput.value = '';
+            
+            addMessage('agent', '', true); 
+            await sendMessageToAPI(userText);
+        }
+    });
+</script>
+
+</body>
+</html>

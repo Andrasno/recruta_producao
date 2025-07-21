@@ -1,0 +1,42 @@
+# requirements.txt
+
+# --- Web API e Servidor ---
+# Instala o FastAPI e todas as suas dependências recomendadas,
+# incluindo o servidor Uvicorn e o Pydantic para validação de dados.
+fastapi[all]
+# Instala o framework, o servidor e o dotenv para variáveis de ambiente
+uvicorn[standard]
+
+# Instala a biblioteca da LlamaIndex para o modelo Groq
+llama-index-llms-groq
+
+# Instala o pandas e pyarrow para ler os arquivos .parquet
+pandas
+
+# --- Manipulação de Dados ---
+# Biblioteca principal para manipulação de dados (DataFrames).
+pandas
+# Necessário para o Pandas ler e escrever no formato Parquet de forma eficiente.
+pyarrow
+
+# --- Integração com LLM (Llama 3 via Groq) ---
+# Pacote específico da LlamaIndex para se comunicar com a API da Groq.
+# Ele instala 'llama-index-core' e outras dependências automaticamente.
+llama-index-llms-groq
+
+# --- Utilitários e Boas Práticas ---
+# Para carregar variáveis de ambiente a partir de um arquivo .env.
+python-dotenv
+# Para criar logs estruturados em formato JSON para monitoramento.
+python-json-logger
+
+# --- Dashboard de Monitoramento ---
+# Framework para criar o painel de acompanhamento de drift.
+streamlit
+# Para criar os gráficos interativos no dashboard.
+plotly
+gdown
+
+# --- Testes ---
+# Framework para executar os testes unitários e de integração.
+pytest

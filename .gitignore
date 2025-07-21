@@ -1,0 +1,13 @@
+vagas.parquet
+prospects.parquet
+applicants.parquet
+.env
+.venv
+# Pastas de dados temporários e de saída
+json_temp/
+parquet_output/
+
+# Arquivos de ambiente do Python
+__pycache__/
+*.pyc
+
