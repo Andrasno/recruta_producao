@@ -1,8 +1,16 @@
-# agent.py
 import pandas as pd
 from llama_index.llms.groq import Groq
 from llama_index.core.llms import ChatMessage
 from functools import lru_cache
+
+def otimizar_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Converte colunas do tipo 'object' para 'category' para economizar memória."""
+    for col in df.select_dtypes(include=['object']).columns:
+        # Apenas converte colunas se o número de categorias for menor que 50% do total de linhas
+        # Isso evita converter colunas com muitos valores únicos (como IDs ou nomes completos)
+        if df[col].nunique() / len(df) < 0.5:
+            df[col] = df[col].astype('category')
+    return df
 
 class BaseDeDados:
     """
@@ -11,10 +19,22 @@ class BaseDeDados:
     """
     def __init__(self, vagas_path, prospects_path, applicants_path):
         print("Carregando base de dados pré-processada...")
-        self.df_vagas = pd.read_parquet(vagas_path)
-        self.df_prospects = pd.read_parquet(prospects_path)
-        self.df_applicants = pd.read_parquet(applicants_path)
+        # Carrega os arquivos Parquet
+        df_vagas_raw = pd.read_parquet(vagas_path)
+        df_prospects_raw = pd.read_parquet(prospects_path)
+        df_applicants_raw = pd.read_parquet(applicants_path)
+        
+        print("Otimizando uso de memória dos DataFrames...")
+        # Otimiza cada DataFrame para economizar RAM
+        self.df_vagas = otimizar_dataframe(df_vagas_raw)
+        self.df_prospects = otimizar_dataframe(df_prospects_raw)
+        self.df_applicants = otimizar_dataframe(df_applicants_raw)
+        
         print("Base de Dados pronta para uso.")
+        # Loga o uso de memória para diagnóstico (útil para ver o resultado da otimização)
+        print(f"Uso de memória - Vagas: {self.df_vagas.memory_usage(deep=True).sum() / 1e6:.2f} MB")
+        print(f"Uso de memória - Prospects: {self.df_prospects.memory_usage(deep=True).sum() / 1e6:.2f} MB")
+        print(f"Uso de memória - Applicants: {self.df_applicants.memory_usage(deep=True).sum() / 1e6:.2f} MB")
 
     @lru_cache(maxsize=128)
     def buscar_vaga_por_texto(self, texto_busca):
