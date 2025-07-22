@@ -7,6 +7,8 @@ from typing import Dict, Any
 
 # Importa o Middleware de CORS para permitir a comunicação com o frontend
 from fastapi.middleware.cors import CORSMiddleware
+# Importa a FileResponse para servir o arquivo HTML
+from fastapi.responses import FileResponse
 
 # Importa a função para carregar o arquivo .env
 from dotenv import load_dotenv
@@ -20,7 +22,7 @@ from agent import BaseDeDados, AgenteScreener, AgenteEntrevistador
 # Imports para o LLM
 from llama_index.llms.groq import Groq
 
-# --- MUDANÇA: Importa a função de pipeline e a variável de pasta do nosso script de pré-processamento
+# Importa a função de pipeline e a variável de pasta do nosso script de pré-processamento
 from preprocess import executar_pipeline_completo, PASTA_PARQUET_SAIDA
 
 # Carrega as variáveis do arquivo .env para o ambiente do sistema
@@ -47,44 +49,44 @@ async def lifespan(app: FastAPI):
     O código aqui roda QUANDO A API INICIA.
     """
     logger.info("API do Agente Decision iniciando...")
-    
-    # --- MUDANÇA: Executa todo o pipeline de download e processamento ANTES de carregar a base.
-    # Isso garante que os arquivos Parquet existirão quando a aplicação tentar usá-los.
+
+    # 1. Executa todo o pipeline de download e processamento ANTES de carregar a base.
+    logger.info("Iniciando pipeline de dados...")
     executar_pipeline_completo()
-    
-    # --- MUDANÇA: Constrói os caminhos para os arquivos Parquet usando a pasta de saída correta.
+    logger.info("Pipeline de dados finalizado.")
+
+    # 2. Constrói os caminhos para os arquivos Parquet usando a pasta de saída correta.
     caminho_vagas = os.path.join(PASTA_PARQUET_SAIDA, 'vagas.parquet')
     caminho_prospects = os.path.join(PASTA_PARQUET_SAIDA, 'prospects.parquet')
     caminho_applicants = os.path.join(PASTA_PARQUET_SAIDA, 'applicants.parquet')
 
-    # 1. Carrega a base de dados a partir dos arquivos Parquet pré-processados
+    # 3. Carrega a base de dados a partir dos arquivos Parquet pré-processados
     logger.info(f"Carregando base de dados dos arquivos em '{PASTA_PARQUET_SAIDA}'...")
     state['db'] = BaseDeDados(
         vagas_path=caminho_vagas,
         prospects_path=caminho_prospects,
         applicants_path=caminho_applicants
     )
-    
-    # 2. Carrega a chave da API do ambiente (arquivo .env) e inicializa o LLM
+
+    # 4. Carrega a chave da API do ambiente (arquivo .env) e inicializa o LLM
     api_key = os.environ.get('GROQ_API_KEY')
     if not api_key:
         logger.critical("A chave da API da Groq não foi encontrada. A aplicação será encerrada.")
         raise ValueError("Defina GROQ_API_KEY no seu arquivo .env")
-        
+
     state['llm'] = Groq(model="llama-3.3-70b-versatile", api_key=api_key)
-    
-    # 3. Cria um dicionário para armazenar as sessões de conversa ativas
+
+    # 5. Cria um dicionário para armazenar as sessões de conversa ativas
     state['sessions'] = {}
-    
+
     logger.info("API iniciada e pronta para receber requisições.")
-    
+
     yield  # A API fica rodando aqui
-    
+
     # Código que roda QUANDO A API ENCERRA (limpeza)
     logger.info("API encerrando.")
     state.clear()
 
-# --- O restante do seu arquivo permanece exatamente o mesmo ---
 # --- Criação da Aplicação FastAPI ---
 app = FastAPI(
     title="Decision Recrutamento AI",
@@ -93,47 +95,62 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Habilita o CORS... (código idêntico)
+# Habilita o CORS para permitir que o frontend se comunique com a API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Permite todas as origens (para desenvolvimento)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --- Endpoints da API ---
+
+@app.get("/", summary="Endpoint da Interface do Usuário", response_class=FileResponse, include_in_schema=False)
+async def root():
+    """
+    Este endpoint serve a página principal da aplicação (o frontend).
+    Ele retorna o arquivo index.html.
+    """
+    return "index.html"
+
 @app.post("/predict", response_model=PredictResponse, summary="Interage com o agente de recrutamento")
 async def predict(request: PredictRequest):
-    # ... (código do endpoint idêntico)
+    """
+    Endpoint principal para conversar com o agente.
+    Ele gerencia o estado da conversa usando um 'session_id'.
+    """
     start_time = time.time()
     session_id = request.session_id
     user_input = request.user_input
-    
+
     logger.info("Requisição recebida", extra={"session_id": session_id, "input_length": len(user_input)})
 
     try:
+        # Se a sessão não existe, é o início de uma nova conversa.
         if session_id not in state['sessions']:
             vagas_encontradas = state['db'].buscar_vaga_por_texto(user_input)
             if vagas_encontradas.empty:
                 logger.warning("Vaga não encontrada na busca inicial", extra={"query": user_input, "session_id": session_id})
                 return PredictResponse(session_id=session_id, agent_reply="Peço desculpas, mas no momento não encontrei um processo seletivo com este nome. Agradeço seu interesse!")
-            
+
             vaga_confirmada = vagas_encontradas.iloc[0]
+            # Log de dados para monitoramento de drift
             logger.info("Vaga Identificada", extra={
                 "session_id": session_id, "id_vaga": vaga_confirmada.get('id_vaga'),
                 "titulo_vaga": vaga_confirmada.get('titulo_vaga'), "nivel_profissional": vaga_confirmada.get('nivel profissional')
             })
-            
+
             state['sessions'][session_id] = {"state": "AWAITING_CANDIDATE_NAME", "vaga_info": vaga_confirmada}
             return PredictResponse(session_id=session_id, agent_reply=f"Excelente! Encontrei a vaga '{vaga_confirmada['titulo_vaga']}'. Para continuarmos, por favor, me informe seu nome completo.")
 
         current_session = state['sessions'][session_id]
-        
+
+        # Fluxo para quando o agente está esperando o nome do candidato
         if current_session['state'] == "AWAITING_CANDIDATE_NAME":
             vaga_info = current_session['vaga_info']
             candidato_existente = state['db'].buscar_candidato_em_vaga(user_input, vaga_info['id_vaga'])
-            
+
             if candidato_existente is None:
                 logger.info("Novo candidato detectado", extra={"session_id": session_id, "nome_informado": user_input})
                 current_session['agent'] = AgenteScreener(vaga_info=vaga_info, nome_candidato=user_input, llm_instance=state['llm'])
@@ -150,6 +167,7 @@ async def predict(request: PredictRequest):
 
             return PredictResponse(session_id=session_id, agent_reply=agent_reply)
 
+        # Fluxo para quando a conversa já está em andamento
         elif current_session['state'] == "IN_CONVERSATION":
             agent = current_session['agent']
             agent_reply = agent.conversar(user_input)
@@ -164,7 +182,3 @@ async def predict(request: PredictRequest):
     finally:
         duration = time.time() - start_time
         logger.info("Requisição finalizada", extra={"session_id": session_id, "duration_ms": round(duration * 1000, 2)})
-
-@app.get("/", summary="Endpoint de status", include_in_schema=False)
-async def root():
-    return {"message": "API do Agente de Recrutamento da Decision está online."}
